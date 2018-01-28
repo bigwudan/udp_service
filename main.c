@@ -8,20 +8,26 @@
 #include <signal.h>
 #include <assert.h>
 #include <errno.h>
-
-#include "mysql_connect.h"
+#include <sys/syslog.h>
+//#include "mysql_connect.h" //gcc -I/usr/include/mysql/  -L/usr/lib64/mysql/ -lmysqlclient -lz main.c mysql_connect.c -o testudpmain && ./testudpmain
 
 #define PORT_SERV 8911
 
-static void handle_request(char *buff, int n)
-{
-    printf("test=%s,pid=%d\n", buff, (int)getpid());
-    char write[1204]={'\0'};
-    sprintf(write, "insert into test_udp (key_value) values('%s');", buff);
-    insert(write);
+// static void handle_request(char *buff, int n)
+// {
+//     printf("test=%s,pid=%d\n", buff, (int)getpid());
+//     char write[1204]={'\0'};
+//     sprintf(write, "insert into test_udp (key_value) values('%s');", buff);
+//     insert(write);
     
-};
-
+// };
+int debug_log(const  char *ptitle , const char *pcontent)
+{
+    return 1;
+    openlog(ptitle, LOG_CONS | LOG_PID, 0);   
+    syslog(LOG_USER | LOG_DEBUG, "dubug: %s \n", pcontent);   
+    closelog();   
+}
 static int handle_connect(int s)
 {
     struct sockaddr_in addr_clie;
@@ -74,6 +80,19 @@ void sig_int(int num)
     exit(1);
 };
 
+void set_sockopt(int s)
+{
+    int rc ;
+    socklen_t optlen;
+    // n = setsockopt(s,SOL_SOCKET,SO_RCVBUF,(const char*)&nRecvBuf,sizeof(int));
+    // int rcv_buf_size = 0;//1000 * 1024;  
+    // n = getsockopt(s, SOL_SOCKET, SO_RCVBUF, &rcv_buf_size, &optlen); 
+    // printf("rcv=%d\n", rcv_buf_size);
+    // return 1;
+    // setsockopt(s, SOL_SOCKET, SO_RCVBUF, &rcv_buf_size, sizeof(int)); 
+
+}
+
 int main()
 {
     int s;
@@ -85,11 +104,6 @@ int main()
     pid_t pid;
     signal(SIGINT, sig_int);
     s = socket(AF_INET, SOCK_DGRAM, 0);
-    int rc ;
-    socklen_t optlen;
-    // n = setsockopt(s,SOL_SOCKET,SO_RCVBUF,(const char*)&nRecvBuf,sizeof(int));
-    int rcv_buf_size = 1000 * 1024;  
-    setsockopt(s, SOL_SOCKET, SO_RCVBUF, &rcv_buf_size, sizeof(int)); 
     memset(&addr_serv, 0, sizeof(addr_serv));
     addr_serv.sin_family = AF_INET;
     addr_serv.sin_addr.s_addr = htonl(INADDR_ANY);
