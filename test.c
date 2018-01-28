@@ -8,13 +8,15 @@
 #include <signal.h>
 #include <assert.h>
 #include <errno.h>
+#include <sys/syslog.h>
 
-#include "mysql_connect.h"
 
 
 
 int main()
 {
-    insert("insert into test_udp (key_value) values ('wudan');");
-    return 1;
+    openlog("testsyslog", LOG_CONS | LOG_PID, 0);   
+    syslog(LOG_USER | LOG_DEBUG, "syslog test message generated in program %s \n");   
+    closelog();   
+    return 0;   
 }

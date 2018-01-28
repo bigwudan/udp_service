@@ -11,6 +11,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/syslog.h>
 #include <mysql/mysql.h>
 #include "mysql_connect.h"
 MYSQL *g_conn; // mysql 连接
@@ -70,4 +71,11 @@ int sql_test()
     int flag = 0;
     flag = init_mysql();
     printf("flag=%d\n", flag);
+}
+
+void debug_log(const  char *ptitle , const char *pcontent)
+{
+    openlog(ptitle, LOG_CONS | LOG_PID, 0);   
+    syslog(LOG_USER | LOG_DEBUG, "dubug: %s \n", pcontent);   
+    closelog();   
 }

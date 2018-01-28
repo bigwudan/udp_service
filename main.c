@@ -29,17 +29,35 @@ static int handle_connect(int s)
     int n;
     pid_t pid;    
     while(1){
-        printf("wudan\n");  
         char buff[1025] = {'\0'};
         len = sizeof(addr_clie);
         n = recvfrom(s, buff, 1025, 0, (struct sockaddr*)&addr_clie, &len);  
-        sendto(s, buff, n, 0, (struct sockaddr*)&addr_clie, len);
+        if(n < 0){
+            debug_log("recvfrom", strerror(errno));     
+        }
         if(n > 0){
             pid = fork();
-            if(pid > 0){
+            if(pid < 0){
+               debug_log("fork", strerror(errno));     
+               exit(0);
+            }else if(pid > 0){
                 signal(SIGCLD, SIG_IGN);
             }else{
-                handle_request(buff, n);
+                debug_log("success", "ok");     
+                FILE *fp = NULL;
+                fp = fopen("test1.txt", "a+");
+                if(fp == NULL){
+                    debug_log("fopen", strerror(errno));     
+                    exit(1);                                
+                }else{
+                    fputs("a\n", fp);                    
+                    fclose(fp);
+
+                }
+
+
+
+                // handle_request(buff, n);
                 return 0;
             }
         }
@@ -67,6 +85,11 @@ int main()
     pid_t pid;
     signal(SIGINT, sig_int);
     s = socket(AF_INET, SOCK_DGRAM, 0);
+    int rc ;
+    socklen_t optlen;
+    // n = setsockopt(s,SOL_SOCKET,SO_RCVBUF,(const char*)&nRecvBuf,sizeof(int));
+    int rcv_buf_size = 1000 * 1024;  
+    setsockopt(s, SOL_SOCKET, SO_RCVBUF, &rcv_buf_size, sizeof(int)); 
     memset(&addr_serv, 0, sizeof(addr_serv));
     addr_serv.sin_family = AF_INET;
     addr_serv.sin_addr.s_addr = htonl(INADDR_ANY);
@@ -75,7 +98,6 @@ int main()
     flag = bind(s, (struct sockaddr*)&addr_serv, sizeof(addr_serv));
     printf("flag=%d\n", flag);
     printf("error1=%s\n", strerror(errno));
-    int lentest = 0;
     handle_connect(s);
     return 1;
 }

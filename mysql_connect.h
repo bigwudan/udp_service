@@ -2,4 +2,5 @@
 #define _MYSQL_CONNECT_H
 extern int insert(const char *);
 extern int sql_test();
+extern void debug_log(const char  *, const char *);
 #endif  
