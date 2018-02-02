@@ -23,8 +23,12 @@ int debug_log(const  char *ptitle , const char *pcontent)
 
 void* th_fun(void *arg)
 {
-	
-	printf("arg\n");
+    FILE *fp = NULL;
+    fp = fopen("test1.txt", "a+");
+    fputs("a\n", fp);                    
+    fclose(fp);
+
+
 	return (void*)0;
 
 }
