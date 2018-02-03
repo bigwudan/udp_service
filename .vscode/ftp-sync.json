@@ -1,8 +1,8 @@
 {
-    "remotePath": "/usr/games/udp/",
+    "remotePath": "/usr/games/udp_service/",
     "host": "114.215.85.234",
     "username": "root",
-    "password": "Wd811103",
+    "password": "Gao840824",
     "port": 21,
     "secure": false,
     "protocol": "ftp",
