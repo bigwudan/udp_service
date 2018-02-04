@@ -38,7 +38,7 @@ int main()
     signal(SIGINT, sig_int);
 
     int a = 0;
-    for(a = 0; a < 1500; a++){
+    for(a = 0; a < 1000; a++){
         pid = fork();
         if(pid < 0){
             return 0;

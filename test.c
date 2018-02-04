@@ -8,7 +8,7 @@ int main()
     time_t timep;
     struct tm *p;
     time(&timep);
-    p = gmtime(&timep);
+    p = localtime(&timep);
 
     printf("%d-%d-%d\n", (1900+p->tm_year), (1+p->tm_mon), p->tm_mday);
 
@@ -16,7 +16,7 @@ int main()
 
     char filename[20] = {0};
 
-    sprintf(filename, "%d-%d-%d-%d-%d",(1900+p->tm_year), (1+p->tm_mon), p->tm_mday,  24 - p->tm_hour, p->tm_min);
+    sprintf(filename, "testlog\\%d-%.2d-%.2d-%.2d:%.2d",(1900+p->tm_year), (1+p->tm_mon), p->tm_mday,  p->tm_hour, p->tm_min);
 
     printf("file=%s\n", filename);
 

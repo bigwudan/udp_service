@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <sys/syslog.h>
 #include <pthread.h>
+#include <time.h>
 //#include "mysql_connect.h" //gcc -I/usr/include/mysql/  -L/usr/lib64/mysql/ -lmysqlclient -lz main.c mysql_connect.c -o testudpmain && ./testudpmain
 
 #define PORT_SERV 8911
@@ -21,16 +22,26 @@ int debug_log(const  char *ptitle , const char *pcontent)
     closelog();   
 }
 
+
+void get_timestr(char *filename)
+{
+    time_t timep;
+    struct tm *p;
+    time(&timep);
+    p = localtime(&timep);
+    sprintf(filename, "testlog//%d-%.2d-%.2d-%.2d:%.2d.log",(1900+p->tm_year), (1+p->tm_mon), p->tm_mday,  p->tm_hour, p->tm_min);
+}
+
+
 void* th_fun(void *arg)
 {
     FILE *fp = NULL;
-    fp = fopen("test1.txt", "a+");
+    char filename[30] = {0};
+    get_timestr(filename);
+    fp = fopen(filename, "a+");
     fputs("a\n", fp);                    
     fclose(fp);
-
-
 	return (void*)0;
-
 }
 
 static int handle_connect(int s)
