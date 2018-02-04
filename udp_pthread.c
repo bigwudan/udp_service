@@ -35,12 +35,24 @@ void get_timestr(char *filename)
 
 void* th_fun(void *arg)
 {
-    FILE *fp = NULL;
-    char filename[30] = {0};
-    get_timestr(filename);
-    fp = fopen(filename, "a+");
-    fputs("a\n", fp);                    
-    fclose(fp);
+    printf("argnum=%d\n", *(int *)arg);
+
+
+    // printf("argnum1=%d\n", (int)(*((int*)arg)));
+
+    
+
+    // FILE *fp = NULL;
+    // char filename[30] = {0};
+    // char buff[1025] = {'\0'};
+    // int *pnum = (int *)arg;
+
+    // sprintf(buff,"%d\n", *pnum);
+    // printf("a=%s", buff);
+    // get_timestr(filename);
+    // fp = fopen(filename, "a+");
+    // fputs(buff, fp);                    
+    // fclose(fp);
 	return (void*)0;
 }
 
@@ -55,15 +67,17 @@ static int handle_connect(int s)
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED); 
     while(1){
-        char buff[1025] = {'\0'};
+        int rec_num = 0;
         len = sizeof(addr_clie);
-        n = recvfrom(s, buff, 1025, 0, (struct sockaddr*)&addr_clie, &len);  
+        n = recvfrom(s, &rec_num, sizeof(int), 0, (struct sockaddr*)&addr_clie, &len);  
         if(n < 0){
             debug_log("recvfrom", strerror(errno));     
         }
         if(n > 0){
             pthread_t th;
-            if((err = pthread_create(&th, &attr, th_fun, NULL)) != 0){
+            printf("num=%d\n", rec_num);
+            int test_num = 11;
+            if((err = pthread_create(&th, &attr, th_fun, &test_num)) != 0){
                 perror("pthread create error");
             }
             pthread_attr_destroy(&attr);
