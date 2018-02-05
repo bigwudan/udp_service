@@ -56,7 +56,7 @@ int main()
             
             sprintf(str, " %d" , a);
 
-            n = sendto(s, str, 25,0 , (struct sockaddr*)&addr_serv, sizeof(addr_serv));
+            n = sendto(s, &a, sizeof(int),0 , (struct sockaddr*)&addr_serv, sizeof(addr_serv));
             
             printf("n=%d\n",n);
             close(s);        

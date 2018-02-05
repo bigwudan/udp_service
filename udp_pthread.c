@@ -35,24 +35,24 @@ void get_timestr(char *filename)
 
 void* th_fun(void *arg)
 {
-    printf("argnum=%d\n", *(int *)arg);
+    //printf("argnum=%d\n", (int)arg);
 
 
     // printf("argnum1=%d\n", (int)(*((int*)arg)));
 
     
 
-    // FILE *fp = NULL;
-    // char filename[30] = {0};
-    // char buff[1025] = {'\0'};
-    // int *pnum = (int *)arg;
+    FILE *fp = NULL;
+    char filename[30] = {0};
+    char buff[1200] = {'\0'};
+    
 
-    // sprintf(buff,"%d\n", *pnum);
+    sprintf(buff,"%d\n", (int )arg);
     // printf("a=%s", buff);
-    // get_timestr(filename);
-    // fp = fopen(filename, "a+");
-    // fputs(buff, fp);                    
-    // fclose(fp);
+    get_timestr(filename);
+    fp = fopen(filename, "a+");
+    fputs(buff, fp);                    
+    fclose(fp);
 	return (void*)0;
 }
 
@@ -75,9 +75,9 @@ static int handle_connect(int s)
         }
         if(n > 0){
             pthread_t th;
-            printf("num=%d\n", rec_num);
-            int test_num = 11;
-            if((err = pthread_create(&th, &attr, th_fun, &test_num)) != 0){
+            
+            
+            if((err = pthread_create(&th, &attr, th_fun, (void *)rec_num)) != 0){
                 perror("pthread create error");
             }
             pthread_attr_destroy(&attr);
