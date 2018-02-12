@@ -11,14 +11,32 @@
 #include <sys/syslog.h>
 #include <pthread.h>
 //#include "mysql_connect.h" //gcc -I/usr/include/mysql/  -L/usr/lib64/mysql/ -lmysqlclient -lz main.c mysql_connect.c -o testudpmain && ./testudpmain
+#include "stack_data.h"
 
 #define PORT_SERV 8911
+
+struct thread_arg{
+    int num;
+    struct datainfo *pdatainfo;
+};
+
+
 int debug_log(const  char *ptitle , const char *pcontent)
 {
     return 1;
     openlog(ptitle, LOG_CONS | LOG_PID, 0);   
     syslog(LOG_USER | LOG_DEBUG, "dubug: %s \n", pcontent);   
     closelog();   
+}
+
+
+void* wdb_fun(void *arg)
+{
+    // struct thread_arg *plist = (struct thread_arg *)arg;
+    printf("buf\n");
+    // free(plist);
+    // plist = NULL;
+    return (void*)0;
 }
 
 void* th_fun(void *arg)
@@ -41,17 +59,28 @@ static int handle_connect(int s)
     pid_t pid;  
     pthread_attr_t attr;
     int err;
+    int flag;
+    // struct datainfo mydatainfo;
+    // flag = init(&mydatainfo);
+    // if(flag != 1){
+    //     printf("error create datainfo");
+    //     return 1;
+    // }
+
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED); 
     while(1){
-        char buff[1025] = {'\0'};
+        int rev_num = 0;
         len = sizeof(addr_clie);
-        n = recvfrom(s, buff, 1025, 0, (struct sockaddr*)&addr_clie, &len);  
+        n = recvfrom(s, &rev_num, sizeof(int), 0, (struct sockaddr*)&addr_clie, &len);  
         if(n < 0){
-            debug_log("recvfrom", strerror(errno));     
+            printf("revfromerror=%s\n", strerror(errno));
         }
         if(n > 0){
             pthread_t th;
+            // struct thread_arg *pthread_arg = malloc(sizeof(struct thread_arg));
+            // pthread_arg->num = rev_num;                
+            // pthread_arg->pdatainfo = &mydatainfo;
             if((err = pthread_create(&th, &attr, th_fun, NULL)) != 0){
                 perror("pthread create error");
             }
@@ -79,7 +108,6 @@ void set_sockopt(int s)
     // printf("rcv=%d\n", rcv_buf_size);
     // return 1;
     // setsockopt(s, SOL_SOCKET, SO_RCVBUF, &rcv_buf_size, sizeof(int)); 
-
 }
 
 int main()
@@ -91,6 +119,7 @@ int main()
     int n;
     int flag;
     pid_t pid;
+
     signal(SIGINT, sig_int);
     s = socket(AF_INET, SOCK_DGRAM, 0);
     memset(&addr_serv, 0, sizeof(addr_serv));

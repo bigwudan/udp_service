@@ -38,7 +38,7 @@ int main()
     signal(SIGINT, sig_int);
 
     int a = 0;
-    for(a = 0; a < 1500; a++){
+    for(a = 0; a < 4; a++){
         pid = fork();
         if(pid < 0){
             return 0;
@@ -50,14 +50,11 @@ int main()
             s = socket(AF_INET, SOCK_DGRAM, 0);
             memset(&addr_serv, 0, sizeof(addr_serv));
             addr_serv.sin_family = AF_INET;
-            addr_serv.sin_addr.s_addr = inet_addr("114.215.85.234");
+             addr_serv.sin_addr.s_addr = inet_addr("114.215.85.234");
+            //addr_serv.sin_addr.s_addr = inet_addr("192.168.1.102");
             addr_serv.sin_port = htons(PORT_SERV);
-
-            
-            sprintf(str, " %d" , a);
-
-            n = sendto(s, str, 25,0 , (struct sockaddr*)&addr_serv, sizeof(addr_serv));
-            
+            sprintf(str, " %d" , 12);
+            n = sendto(s, &a, sizeof(int),0 , (struct sockaddr*)&addr_serv, sizeof(addr_serv));
             printf("n=%d\n",n);
             close(s);        
         }
