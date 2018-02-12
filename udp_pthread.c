@@ -32,10 +32,13 @@ int debug_log(const  char *ptitle , const char *pcontent)
 
 void* wdb_fun(void *arg)
 {
-    // struct thread_arg *plist = (struct thread_arg *)arg;
-    printf("buf\n");
-    // free(plist);
-    // plist = NULL;
+    struct thread_arg *plist = (struct thread_arg *)arg;
+    //printf("arg_num=%d\n", plist->num);
+    push(plist->pdatainfo, plist->num);
+    struct datainfo *pdata = plist->pdatainfo;
+    free(plist);
+    plist = NULL;
+    printf("pop->num=%d\n", pop(pdata));
     return (void*)0;
 }
 
@@ -60,12 +63,12 @@ static int handle_connect(int s)
     pthread_attr_t attr;
     int err;
     int flag;
-    // struct datainfo mydatainfo;
-    // flag = init(&mydatainfo);
-    // if(flag != 1){
-    //     printf("error create datainfo");
-    //     return 1;
-    // }
+    struct datainfo mydatainfo;
+    flag = init(&mydatainfo);
+    if(flag != 1){
+        printf("error create datainfo");
+        return 1;
+    }
 
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED); 
@@ -78,10 +81,10 @@ static int handle_connect(int s)
         }
         if(n > 0){
             pthread_t th;
-            // struct thread_arg *pthread_arg = malloc(sizeof(struct thread_arg));
-            // pthread_arg->num = rev_num;                
-            // pthread_arg->pdatainfo = &mydatainfo;
-            if((err = pthread_create(&th, &attr, th_fun, NULL)) != 0){
+            struct thread_arg *pthread_arg = malloc(sizeof(struct thread_arg));
+            pthread_arg->num = rev_num;                
+            pthread_arg->pdatainfo = &mydatainfo;
+            if((err = pthread_create(&th, &attr, wdb_fun, pthread_arg)) != 0){
                 perror("pthread create error");
             }
             pthread_attr_destroy(&attr);
