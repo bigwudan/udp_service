@@ -4,6 +4,7 @@
 struct datainfo{
     int *plist;
     int top;
+    pthread_mutex_t mutex;
 };
 extern int is_empty(struct datainfo *pdatainfo);
 extern int is_full(struct datainfo *pdatainfo);

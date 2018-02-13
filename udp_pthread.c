@@ -22,6 +22,16 @@ struct thread_arg{
 };
 
 
+void get_timestr(char *filename)
+{
+    time_t timep;
+    struct tm *p;
+    time(&timep);
+    p = localtime(&timep);
+    sprintf(filename, "testlog//%d-%.2d-%.2d-%.2d:%.2d.log",(1900+p->tm_year), (1+p->tm_mon), p->tm_mday,  p->tm_hour, p->tm_min);
+}
+
+
 int debug_log(const  char *ptitle , const char *pcontent)
 {
     return 1;
@@ -58,8 +68,28 @@ void* th_fun(void *arg)
 void* dealdata_fun(void *arg)
 {
     struct datainfo *pdata =  (struct datainfo *)arg;
-    printf("pop->num=%d\n", pop(pdata));
-    return (void*)0;
+    if(arg == NULL){
+
+
+    }else{
+        // printf("pop->num=%d\n", pop(pdata));
+        pthread_mutex_lock(&pdata->mutex);
+        int num = pop(pdata);
+        if(num >= 0){
+            FILE *fp = NULL;
+            char filename[30] = {0};
+            char buff[1200] = {'\0'};
+
+            sprintf(buff,"%d\n", num);
+            // printf("a=%s", buff);
+            get_timestr(filename);
+            fp = fopen(filename, "a+");
+            fputs(buff, fp);                    
+            fclose(fp);
+        }
+        pthread_mutex_unlock(&pdata->mutex);
+    }
+	return (void*)0;
 }
 
 //设置非阻塞  

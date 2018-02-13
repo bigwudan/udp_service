@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <pthread.h>
 #include "stack_data.h"
 // //类型
 // struct datainfo{
@@ -8,7 +9,7 @@
 
 // };
 
-static int maxnum = 10;
+static int maxnum = 1000;
 
 int is_empty(struct datainfo *pdatainfo)
 {
@@ -37,6 +38,7 @@ int init(struct datainfo *pdatainfo)
         return -1;
     }
     pdatainfo->top = 0;
+    pthread_mutex_init(&pdatainfo->mutex, NULL);
     return 1;
 }
 
@@ -67,4 +69,6 @@ int destory(struct datainfo *pdatainfo)
     pdatainfo->top = 0;
     free(pdatainfo->plist);
     pdatainfo->plist = NULL;
+    pthread_mutex_destroy(&pdatainfo->mutex);
+
 }
