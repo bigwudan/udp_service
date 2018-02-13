@@ -73,9 +73,26 @@ int sql_test()
     printf("flag=%d\n", flag);
 }
 
-void debug_log(const  char *ptitle , const char *pcontent)
+// void debug_log(const  char *ptitle , const char *pcontent)
+// {
+//     openlog(ptitle, LOG_CONS | LOG_PID, 0);   
+//     syslog(LOG_USER | LOG_DEBUG, "dubug: %s \n", pcontent);   
+//     closelog();   
+// }
+
+int insertsql(const char *sql_str)
 {
-    openlog(ptitle, LOG_CONS | LOG_PID, 0);   
-    syslog(LOG_USER | LOG_DEBUG, "dubug: %s \n", pcontent);   
-    closelog();   
+    int flag = 0;
+    flag = executesql(sql_str);
+    if(flag == -1){
+        print_mysql_error(NULL);
+        return -1;
+    }
+    return 0;
+}
+
+int close_sql()
+{
+    mysql_close(g_conn); // 关闭链接
+    return 0;
 }

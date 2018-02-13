@@ -11,7 +11,7 @@
 #include <sys/syslog.h>
 #include <pthread.h>
 #include <fcntl.h> 
-//#include "mysql_connect.h" //gcc -I/usr/include/mysql/  -L/usr/lib64/mysql/ -lmysqlclient -lz main.c mysql_connect.c -o testudpmain && ./testudpmain
+#include "mysql_connect.h" //gcc -I/usr/include/mysql/  -L/usr/lib64/mysql/ -lmysqlclient -lz main.c mysql_connect.c -o testudpmain && ./testudpmain
 #include "stack_data.h"
 
 #define PORT_SERV 8911
@@ -28,7 +28,8 @@ void get_timestr(char *filename)
     struct tm *p;
     time(&timep);
     p = localtime(&timep);
-    sprintf(filename, "testlog//%d-%.2d-%.2d-%.2d:%.2d.log",(1900+p->tm_year), (1+p->tm_mon), p->tm_mday,  p->tm_hour, p->tm_min);
+    // sprintf(filename, "testlog//%d-%.2d-%.2d-%.2d:%.2d.log",(1900+p->tm_year), (1+p->tm_mon), p->tm_mday,  p->tm_hour, p->tm_min);
+    sprintf(filename, "%d-%.2d-%.2d-%.2d:%.2d",(1900+p->tm_year), (1+p->tm_mon), p->tm_mday,  p->tm_hour, p->tm_min);
 }
 
 
@@ -76,16 +77,24 @@ void* dealdata_fun(void *arg)
         pthread_mutex_lock(&pdata->mutex);
         int num = pop(pdata);
         if(num >= 0){
-            FILE *fp = NULL;
+            char write[1204]={'\0'};
             char filename[30] = {0};
-            char buff[1200] = {'\0'};
-
-            sprintf(buff,"%d\n", num);
-            // printf("a=%s", buff);
             get_timestr(filename);
-            fp = fopen(filename, "a+");
-            fputs(buff, fp);                    
-            fclose(fp);
+
+            sprintf(write, "insert into test_udp (key_value, key_time) values(%d, '%s');", num, filename);
+            printf("write=%s\n", write);
+            insertsql(write);
+
+            // FILE *fp = NULL;
+            // char filename[30] = {0};
+            // char buff[1200] = {'\0'};
+
+            // sprintf(buff,"%d\n", num);
+            // // printf("a=%s", buff);
+            // get_timestr(filename);
+            // fp = fopen(filename, "a+");
+            // fputs(buff, fp);                    
+            // fclose(fp);
         }
         pthread_mutex_unlock(&pdata->mutex);
     }
@@ -159,6 +168,7 @@ static int handle_connect(int s)
 
 void sig_int(int num)
 {
+    close_sql();
     printf("testover\n");
     exit(1);
 };
@@ -192,6 +202,15 @@ int main()
     addr_serv.sin_addr.s_addr = htonl(INADDR_ANY);
     // addr_serv.sin_addr.s_addr = inet_addr("10.66.84.56");
     addr_serv.sin_port = htons(PORT_SERV);
+
+    flag = init_mysql();
+    if(flag != 0){
+        perror("init_mysql error\n");
+        return -1;
+    }
+
+
+
     flag = bind(s, (struct sockaddr*)&addr_serv, sizeof(addr_serv));
     printf("flag=%d\n", flag);
     printf("error1=%s\n", strerror(errno));
