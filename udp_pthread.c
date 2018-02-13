@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <sys/syslog.h>
 #include <pthread.h>
+#include <fcntl.h> 
 //#include "mysql_connect.h" //gcc -I/usr/include/mysql/  -L/usr/lib64/mysql/ -lmysqlclient -lz main.c mysql_connect.c -o testudpmain && ./testudpmain
 #include "stack_data.h"
 
@@ -38,7 +39,7 @@ void* wdb_fun(void *arg)
     struct datainfo *pdata = plist->pdatainfo;
     free(plist);
     plist = NULL;
-    printf("pop->num=%d\n", pop(pdata));
+    // printf("pop->num=%d\n", pop(pdata));
     return (void*)0;
 }
 
@@ -53,6 +54,27 @@ void* th_fun(void *arg)
 	return (void*)0;
 
 }
+
+void* dealdata_fun(void *arg)
+{
+    struct datainfo *pdata =  (struct datainfo *)arg;
+    printf("pop->num=%d\n", pop(pdata));
+    return (void*)0;
+}
+
+//设置非阻塞  
+static void setnonblocking(int sockfd) {  
+    int flag = fcntl(sockfd, F_GETFL, 0);  
+    if (flag < 0) {  
+        perror("fcntl F_GETFL fail");  
+        return;  
+    }  
+    if (fcntl(sockfd, F_SETFL, flag | O_NONBLOCK) < 0) {  
+        perror("fcntl F_SETFL fail");  
+    }  
+}  
+  
+
 
 static int handle_connect(int s)
 {
@@ -69,15 +91,24 @@ static int handle_connect(int s)
         printf("error create datainfo");
         return 1;
     }
-
+    setnonblocking(s);
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED); 
     while(1){
+        // printf("top=%d\n", mydatainfo.top);
+
+        if(is_empty(&mydatainfo) != 0){
+            pthread_t th_deal;
+            if((err = pthread_create(&th_deal, &attr, dealdata_fun, &mydatainfo)) != 0){
+                perror("pthread create error");
+            }
+        }
+
         int rev_num = 0;
         len = sizeof(addr_clie);
         n = recvfrom(s, &rev_num, sizeof(int), 0, (struct sockaddr*)&addr_clie, &len);  
         if(n < 0){
-            printf("revfromerror=%s\n", strerror(errno));
+            // printf("revfromerror=%s\n", strerror(errno));
         }
         if(n > 0){
             pthread_t th;
@@ -87,8 +118,9 @@ static int handle_connect(int s)
             if((err = pthread_create(&th, &attr, wdb_fun, pthread_arg)) != 0){
                 perror("pthread create error");
             }
-            pthread_attr_destroy(&attr);
+            // pthread_attr_destroy(&attr);
         }
+
     } 
 };
 
