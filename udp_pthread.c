@@ -13,7 +13,6 @@
 #include <fcntl.h> 
 #include "mysql_connect.h" //gcc -I/usr/include/mysql/  -L/usr/lib64/mysql/ -lmysqlclient -lz main.c mysql_connect.c -o testudpmain && ./testudpmain
 #include "stack_data.h"
-
 #define PORT_SERV 8911
 
 struct thread_arg{
@@ -21,36 +20,25 @@ struct thread_arg{
     struct datainfo *pdatainfo;
 };
 
-
+//格式化时间
 void get_timestr(char *filename)
 {
     time_t timep;
     struct tm *p;
     time(&timep);
     p = localtime(&timep);
-    // sprintf(filename, "testlog//%d-%.2d-%.2d-%.2d:%.2d.log",(1900+p->tm_year), (1+p->tm_mon), p->tm_mday,  p->tm_hour, p->tm_min);
     sprintf(filename, "%d-%.2d-%.2d-%.2d:%.2d",(1900+p->tm_year), (1+p->tm_mon), p->tm_mday,  p->tm_hour, p->tm_min);
 }
 
-
-int debug_log(const  char *ptitle , const char *pcontent)
-{
-    return 1;
-    openlog(ptitle, LOG_CONS | LOG_PID, 0);   
-    syslog(LOG_USER | LOG_DEBUG, "dubug: %s \n", pcontent);   
-    closelog();   
-}
 
 
 void* wdb_fun(void *arg)
 {
     struct thread_arg *plist = (struct thread_arg *)arg;
-    //printf("arg_num=%d\n", plist->num);
     push(plist->pdatainfo, plist->num);
     struct datainfo *pdata = plist->pdatainfo;
     free(plist);
     plist = NULL;
-    // printf("pop->num=%d\n", pop(pdata));
     return (void*)0;
 }
 
@@ -60,33 +48,27 @@ void* th_fun(void *arg)
     fp = fopen("test1.txt", "a+");
     fputs("a\n", fp);                    
     fclose(fp);
-
-
 	return (void*)0;
-
 }
 
 void* dealdata_fun(void *arg)
 {
-
-
-
     struct datainfo *pdata =  (struct datainfo *)arg;
+    int flag = 0;
     if(arg == NULL){
-
-
     }else{
-        pthread_mutex_lock(&pdata->mutex);
+        flag = pthread_mutex_lock(&pdata->mutex);
+        if( flag!= 0){
+            debug_log("pthread_mutex_lock error", strerror(flag));        
+        }
         int num = pop(pdata);
         if(num >= 0){
             char write[1204]={'\0'};
             char filename[30] = {0};
             get_timestr(filename);
-
             sprintf(write, "insert into test_udp (key_value, key_time) values(%d, '%s');", num, filename);
-            printf("write=%s\n", write);
+            // printf("write=%s\n", write);
             insertsql(write);
-
             // FILE *fp = NULL;
             // char filename[30] = {0};
             // char buff[1200] = {'\0'};
@@ -98,7 +80,10 @@ void* dealdata_fun(void *arg)
             // fputs(buff, fp);                    
             // fclose(fp);
         }
-        pthread_mutex_unlock(&pdata->mutex);
+        flag = pthread_mutex_unlock(&pdata->mutex);
+        if( flag!= 0){
+            debug_log("pthread_mutex_unlock error", strerror(flag));        
+        }
     }
 	return (void*)0;
 }
@@ -114,8 +99,6 @@ static void setnonblocking(int sockfd) {
         perror("fcntl F_SETFL fail");  
     }  
 }  
-  
-
 
 static int handle_connect(int s)
 {
@@ -129,33 +112,26 @@ static int handle_connect(int s)
     struct datainfo mydatainfo;
     flag = init(&mydatainfo);
     if(flag != 1){
-        printf("error create datainfo");
-        return 1;
+        debug_log("create datainfo error", "null");
+        return -1;
     }
     // setnonblocking(s);
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED); 
-    pthread_t th_deal;
-    if((err = pthread_create(&th_deal, &attr, dealdata_fun, &mydatainfo)) != 0){
-        perror("pthread create error");
-    }
-
-
     while(1){
         // printf("top=%d\n", mydatainfo.top);
-
         // if(is_empty(&mydatainfo) != 0){
         //     pthread_t th_deal;
         //     if((err = pthread_create(&th_deal, &attr, dealdata_fun, &mydatainfo)) != 0){
         //         perror("pthread create error");
         //     }
         // }
-
         int rev_num = 0;
         len = sizeof(addr_clie);
         n = recvfrom(s, &rev_num, sizeof(int), 0, (struct sockaddr*)&addr_clie, &len);  
         if(n < 0){
             // printf("revfromerror=%s\n", strerror(errno));
+            debug_log("recvfrom error", strerror(errno));
         }
         if(n > 0){
             pthread_t th;
@@ -163,17 +139,15 @@ static int handle_connect(int s)
             pthread_arg->num = rev_num;                
             pthread_arg->pdatainfo = &mydatainfo;
             if((err = pthread_create(&th, &attr, wdb_fun, pthread_arg)) != 0){
-                perror("pthread create error");
+                debug_log("pthread_create_th error", strerror(err));
             }
 
             if(is_empty(&mydatainfo) != 0){
                 pthread_t th_deal;
                 if((err = pthread_create(&th_deal, &attr, dealdata_fun, &mydatainfo)) != 0){
-                    perror("pthread create error");
+                    debug_log("pthread_create_th_deal error", strerror(err));
                 }
             }
-
-            // pthread_attr_destroy(&attr);
         }
 
     } 
@@ -210,26 +184,27 @@ int main()
     int n;
     int flag;
     pid_t pid;
-
     signal(SIGINT, sig_int);
     s = socket(AF_INET, SOCK_DGRAM, 0);
+    if(s < 0){
+        debug_log("socket error", strerror(errno));
+        return -1;
+    }
     memset(&addr_serv, 0, sizeof(addr_serv));
     addr_serv.sin_family = AF_INET;
     addr_serv.sin_addr.s_addr = htonl(INADDR_ANY);
     // addr_serv.sin_addr.s_addr = inet_addr("10.66.84.56");
     addr_serv.sin_port = htons(PORT_SERV);
-
     flag = init_mysql();
     if(flag != 0){
-        perror("init_mysql error\n");
+        debug_log("init_mysql error", "null");
         return -1;
     }
-
-
-
     flag = bind(s, (struct sockaddr*)&addr_serv, sizeof(addr_serv));
-    printf("flag=%d\n", flag);
-    printf("error1=%s\n", strerror(errno));
+    if(flag < 0){
+        debug_log("bind error", strerror(errno));
+        return -1;
+    }
     handle_connect(s);
     return 1;
 }
