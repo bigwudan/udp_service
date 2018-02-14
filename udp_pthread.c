@@ -68,12 +68,14 @@ void* th_fun(void *arg)
 
 void* dealdata_fun(void *arg)
 {
+
+
+
     struct datainfo *pdata =  (struct datainfo *)arg;
     if(arg == NULL){
 
 
     }else{
-        // printf("pop->num=%d\n", pop(pdata));
         pthread_mutex_lock(&pdata->mutex);
         int num = pop(pdata);
         if(num >= 0){
@@ -130,18 +132,24 @@ static int handle_connect(int s)
         printf("error create datainfo");
         return 1;
     }
-    setnonblocking(s);
+    // setnonblocking(s);
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED); 
+    pthread_t th_deal;
+    if((err = pthread_create(&th_deal, &attr, dealdata_fun, &mydatainfo)) != 0){
+        perror("pthread create error");
+    }
+
+
     while(1){
         // printf("top=%d\n", mydatainfo.top);
 
-        if(is_empty(&mydatainfo) != 0){
-            pthread_t th_deal;
-            if((err = pthread_create(&th_deal, &attr, dealdata_fun, &mydatainfo)) != 0){
-                perror("pthread create error");
-            }
-        }
+        // if(is_empty(&mydatainfo) != 0){
+        //     pthread_t th_deal;
+        //     if((err = pthread_create(&th_deal, &attr, dealdata_fun, &mydatainfo)) != 0){
+        //         perror("pthread create error");
+        //     }
+        // }
 
         int rev_num = 0;
         len = sizeof(addr_clie);
@@ -157,6 +165,14 @@ static int handle_connect(int s)
             if((err = pthread_create(&th, &attr, wdb_fun, pthread_arg)) != 0){
                 perror("pthread create error");
             }
+
+            if(is_empty(&mydatainfo) != 0){
+                pthread_t th_deal;
+                if((err = pthread_create(&th_deal, &attr, dealdata_fun, &mydatainfo)) != 0){
+                    perror("pthread create error");
+                }
+            }
+
             // pthread_attr_destroy(&attr);
         }
 

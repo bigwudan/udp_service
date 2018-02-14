@@ -80,23 +80,8 @@ int destory(struct datainfo *pdatainfo)
 int main()
 {
 
-    int flag = 0;        
-    struct datainfo mydatainfo;
-    
-    flag = init(&mydatainfo);
-
-    push(&mydatainfo, 1);
-    push(&mydatainfo, 2);
-    
-
-    // printf("plist-1=%d\n", mydatainfo.plist[0]);
-    // printf("plist-2=%d\n", mydatainfo.plist[1]);
-    // printf("top=%d\n", mydatainfo.top);
-
-    // flag = pop(&mydatainfo);
-    printf("popnum1=%d\n", pop(&mydatainfo));
-    printf("popnum2=%d\n", pop(&mydatainfo));
-    destory(&mydatainfo);
-    return 1;
+    while(1){
+        
+    }
 
 }
