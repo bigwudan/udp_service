@@ -67,12 +67,10 @@ void* dealdata_fun(void *arg)
             char filename[30] = {0};
             get_timestr(filename);
             sprintf(write, "insert into test_udp (key_value, key_time) values(%d, '%s');", num, filename);
-            // printf("write=%s\n", write);
             insertsql(write);
             // FILE *fp = NULL;
             // char filename[30] = {0};
             // char buff[1200] = {'\0'};
-
             // sprintf(buff,"%d\n", num);
             // // printf("a=%s", buff);
             // get_timestr(filename);
@@ -117,7 +115,14 @@ static int handle_connect(int s)
     }
     // setnonblocking(s);
     pthread_attr_init(&attr);
-    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED); 
+    pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
+
+    // pthread_t th_deal;
+    // if((err = pthread_create(&th_deal, &attr, dealdata_fun, &mydatainfo)) != 0){
+    //     debug_log("pthread_create_th_deal error", strerror(err));
+    // }
+    
+     
     while(1){
         // printf("top=%d\n", mydatainfo.top);
         // if(is_empty(&mydatainfo) != 0){

@@ -1,3 +1,1 @@
-wwewew:wq
-:;;wwwwwww# udp_service
-service
+gcc -lpthread -I/usr/include/mysql/  -L/usr/lib64/mysql/ -lmysqlclient -lz udp_pthread.c stack_data.c mysql_connect.c -o udp_pthread
