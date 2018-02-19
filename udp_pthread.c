@@ -19,7 +19,7 @@ struct thread_arg{
     int num;
     struct datainfo *pdatainfo;
 };
-
+struct datainfo mydatainfo;
 //格式化时间
 void get_timestr(char *filename)
 {
@@ -51,6 +51,7 @@ void* th_fun(void *arg)
 	return (void*)0;
 }
 
+//处理函数
 void* dealdata_fun(void *arg)
 {
     struct datainfo *pdata =  (struct datainfo *)arg;
@@ -86,6 +87,28 @@ void* dealdata_fun(void *arg)
 	return (void*)0;
 }
 
+//循环处理
+void* dealwhile_fun(void *arg)
+{
+    int tot = 0;
+    int flag = 0;
+    while(1){
+        flag = pthread_mutex_lock(&mydatainfo.mutex);
+        if(mydatainfo.top != 0){
+            tot ++; 
+            int num = pop(&mydatainfo);
+            char write[1204]={'\0'};
+            char filename[30] = {0};
+            get_timestr(filename);
+            sprintf(write, "insert into test_udp (key_value, key_time) values(%d, '%s');", num, filename);
+            insertsql(write);
+        }
+        flag = pthread_mutex_unlock(&mydatainfo.mutex);
+    }
+    return (void*)0;
+} 
+
+
 //设置非阻塞  
 static void setnonblocking(int sockfd) {  
     int flag = fcntl(sockfd, F_GETFL, 0);  
@@ -107,7 +130,7 @@ static int handle_connect(int s)
     pthread_attr_t attr;
     int err;
     int flag;
-    struct datainfo mydatainfo;
+    
     flag = init(&mydatainfo);
     if(flag != 1){
         debug_log("create datainfo error", "null");
@@ -117,11 +140,15 @@ static int handle_connect(int s)
     pthread_attr_init(&attr);
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
 
-    // pthread_t th_deal;
-    // if((err = pthread_create(&th_deal, &attr, dealdata_fun, &mydatainfo)) != 0){
-    //     debug_log("pthread_create_th_deal error", strerror(err));
-    // }
+    pthread_t th_deal;
+    if((err = pthread_create(&th_deal, &attr, dealwhile_fun, &mydatainfo)) != 0){
+        // debug_log("pthread_create_th_deal error", strerror(err));
+        printf("revfromerror=%s\n", strerror(err));
+
+
+    }
     
+    int tot_num = 0;
      
     while(1){
         // printf("top=%d\n", mydatainfo.top);
@@ -134,25 +161,13 @@ static int handle_connect(int s)
         int rev_num = 0;
         len = sizeof(addr_clie);
         n = recvfrom(s, &rev_num, sizeof(int), 0, (struct sockaddr*)&addr_clie, &len);  
-        if(n < 0){
-            // printf("revfromerror=%s\n", strerror(errno));
-            debug_log("recvfrom error", strerror(errno));
+        if(n <= 0){
+            printf("revfromerror=%s\n", strerror(errno));
+            return 1;
         }
         if(n > 0){
-            pthread_t th;
-            struct thread_arg *pthread_arg = malloc(sizeof(struct thread_arg));
-            pthread_arg->num = rev_num;                
-            pthread_arg->pdatainfo = &mydatainfo;
-            if((err = pthread_create(&th, &attr, wdb_fun, pthread_arg)) != 0){
-                debug_log("pthread_create_th error", strerror(err));
-            }
-
-            if(is_empty(&mydatainfo) != 0){
-                pthread_t th_deal;
-                if((err = pthread_create(&th_deal, &attr, dealdata_fun, &mydatainfo)) != 0){
-                    debug_log("pthread_create_th_deal error", strerror(err));
-                }
-            }
+            push(&mydatainfo, rev_num);
+            //printf("tot_g=%d\n", mydatainfo.top);
         }
 
     } 
@@ -165,6 +180,16 @@ void sig_int(int num)
 {
     close_sql();
     printf("testover\n");
+    printf("mydatainfo_top=%d\n", mydatainfo.top);
+    int n = 0;
+    for(n=0 ; n < mydatainfo.top; n++){
+        printf("plist[%d]:%d\n", n, mydatainfo.plist[n]);
+    }
+    
+
+
+
+
     exit(1);
 };
 
